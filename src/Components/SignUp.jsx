@@ -1,5 +1,6 @@
 import React, { use } from 'react';
 import { AuthContext } from '../Auth/AuthContext';
+import Swal from 'sweetalert2';
 
 const SignUp = () => {
     const { createUser } = use(AuthContext);
@@ -7,27 +8,51 @@ const SignUp = () => {
         e.preventDefault();
         const form = e.target;
         const formData = new FormData(form);
-        const {email,password,...restInfo} = Object.fromEntries(formData.entries())
+        const { email, password, ...restInfo } = Object.fromEntries(formData.entries())
         // const email = formData.get('email');
         // const password = formData.get('password');
-        console.log({ email, password,...restInfo })
-        createUser(email,password)
-        .then(data=>{
-            console.log(data.user);
-           const userInfo={...restInfo};
-            fetch('http://localhost:2000/users',{
-                method:'POST',
-                headers:{
-                    'content-type':'application/json'
-                },
-                body:JSON.stringify(userInfo)
-            }).then(res=>res.json())
-            .then(data=>{
-                console.log(data)
+        const userProfile = {
+            email,
+            ...restInfo,
+        }
+        console.log({ email, password, userProfile })
+        createUser(email, password)
+            .then(data => {
+                console.log(data.user);
+                const userProfile1 = {
+                            email,
+                            ...restInfo,
+                            creationTime:data.user?.metadata?.creationTime,
+                            lastSignInTime : data.user?.metadata?.lastSignInTime
+
+                        }
+                
+                fetch('http://localhost:2000/users', {
+                    method: 'POST',
+                    headers: {
+                        'content-type': 'application/json'
+                    },
+                    body: JSON.stringify(userProfile1)
+                }).then(res => res.json())
+                    .then(data => {
+                        console.log(data);
+                        
+
+
+
+                        if (data.insertedId) {
+                            Swal.fire({
+                                position: "top-center",
+                                icon: "success",
+                                title: "Your account is created",
+                                showConfirmButton: false,
+                                timer: 1500
+                            });
+                        }
+                    })
+            }).catch(error => {
+                console.log(error)
             })
-        }).catch(error=>{
-            console.log(error)
-        })
     }
 
     return (
